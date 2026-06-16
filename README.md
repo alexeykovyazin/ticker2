@@ -16,16 +16,58 @@ go build -o tickerfile.exe .
 
 ## Usage
 
+### Configuration
+
+Settings are read from `tickerfile.json` in the executable directory. Generate a default file:
+
+```powershell
+.\tickerfile.exe init-config
+```
+
+Example `tickerfile.json`:
+
+```json
+{
+  "service": {
+    "name": "tickerfile",
+    "description": "Writes timestamps to log files every 2 seconds"
+  },
+  "log": {
+    "dir": "",
+    "textFile": "text.log",
+    "win32File": "win32.log"
+  },
+  "ticker": {
+    "intervalSeconds": 2
+  }
+}
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `service.name` | `tickerfile` | Windows service name |
+| `service.description` | (see example) | Service description shown in SCM |
+| `log.dir` | executable directory | Directory for log output |
+| `log.textFile` | `text.log` | Standard text log filename |
+| `log.win32File` | `win32.log` | Win32 API log filename |
+| `ticker.intervalSeconds` | `2` | Seconds between timestamp writes |
+
+CLI flags override config values when provided.
+
 ### Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-name` | `tickerfile` | Windows service name |
-| `-logdir` | executable directory | Directory for log output |
+| `-config` | `tickerfile.json` next to executable | Path to configuration file |
+| `-name` | from config | Override service name |
+| `-logdir` | from config | Override log directory |
 
 ### Commands
 
 ```powershell
+# Create default configuration file
+.\tickerfile.exe init-config
+
 # Run in foreground (no install, no admin)
 .\tickerfile.exe debug
 
@@ -38,7 +80,7 @@ go build -o tickerfile.exe .
 .\tickerfile.exe remove
 ```
 
-When the Service Control Manager starts the service, it launches `tickerfile.exe` with no arguments. The program detects service mode automatically and runs the ticker loop.
+When the Service Control Manager starts the service, it launches `tickerfile.exe` with no arguments. The program loads `tickerfile.json` from the executable directory automatically.
 
 ## Log files
 

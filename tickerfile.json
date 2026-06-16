@@ -1,0 +1,14 @@
+{
+  "service": {
+    "name": "tickerfile",
+    "description": "Writes timestamps to log files every 2 seconds"
+  },
+  "log": {
+    "dir": "E:\\Projects_2026\\tickerfile",
+    "textFile": "text.log",
+    "win32File": "win32.log"
+  },
+  "ticker": {
+    "intervalSeconds": 2
+  }
+}

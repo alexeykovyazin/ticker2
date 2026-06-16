@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"tickerfile/internal/config"
+
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/mgr"
@@ -21,7 +23,7 @@ func exePath() (string, error) {
 	return filepath.Abs(exe)
 }
 
-func Install(name, desc string) error {
+func Install(cfg config.Config) error {
 	path, err := exePath()
 	if err != nil {
 		return err
@@ -33,19 +35,19 @@ func Install(name, desc string) error {
 	}
 	defer m.Disconnect()
 
-	s, err := m.OpenService(name)
+	s, err := m.OpenService(cfg.Service.Name)
 	if err == nil {
 		s.Close()
-		return fmt.Errorf("service %q already exists", name)
+		return fmt.Errorf("service %q already exists", cfg.Service.Name)
 	}
 
-	cfg := mgr.Config{
-		DisplayName: name,
-		Description: desc,
+	serviceCfg := mgr.Config{
+		DisplayName: cfg.Service.Name,
+		Description: cfg.Service.Description,
 		StartType:   mgr.StartAutomatic,
 	}
 
-	s, err = m.CreateService(name, path, cfg)
+	s, err = m.CreateService(cfg.Service.Name, path, serviceCfg)
 	if err != nil {
 		return err
 	}
@@ -124,10 +126,10 @@ func Stop(name string) error {
 	return nil
 }
 
-func Run(name, logDir string) error {
-	return svc.Run(name, &handler{logDir: logDir})
+func Run(cfg config.Config) error {
+	return svc.Run(cfg.Service.Name, &handler{cfg: cfg})
 }
 
-func RunDebug(name, logDir string) error {
-	return debug.Run(name, &handler{logDir: logDir})
+func RunDebug(cfg config.Config) error {
+	return debug.Run(cfg.Service.Name, &handler{cfg: cfg})
 }

@@ -8,13 +8,14 @@ import (
 	"path/filepath"
 	"time"
 
+	"tickerfile/internal/config"
 	"tickerfile/internal/logwriter"
 
 	"golang.org/x/sys/windows/svc"
 )
 
 type handler struct {
-	logDir string
+	cfg config.Config
 }
 
 func (h *handler) Execute(args []string, r <-chan svc.ChangeRequest, s chan<- svc.Status) (bool, uint32) {
@@ -22,26 +23,26 @@ func (h *handler) Execute(args []string, r <-chan svc.ChangeRequest, s chan<- sv
 
 	s <- svc.Status{State: svc.StartPending}
 
-	if err := os.MkdirAll(h.logDir, 0o755); err != nil {
-		log.Printf("failed to create log directory %q: %v", h.logDir, err)
+	if err := os.MkdirAll(h.cfg.Log.Dir, 0o755); err != nil {
+		log.Printf("failed to create log directory %q: %v", h.cfg.Log.Dir, err)
 		return false, 1
 	}
 
-	textLog, err := logwriter.OpenText(filepath.Join(h.logDir, "text.log"))
+	textLog, err := logwriter.OpenText(filepath.Join(h.cfg.Log.Dir, h.cfg.Log.TextFile))
 	if err != nil {
 		log.Printf("failed to open text log: %v", err)
 		return false, 1
 	}
 	defer textLog.Close()
 
-	win32Log, err := logwriter.OpenWin32(filepath.Join(h.logDir, "win32.log"))
+	win32Log, err := logwriter.OpenWin32(filepath.Join(h.cfg.Log.Dir, h.cfg.Log.Win32File))
 	if err != nil {
 		log.Printf("failed to open win32 log: %v", err)
 		return false, 1
 	}
 	defer win32Log.Close()
 
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(h.cfg.Interval())
 	defer ticker.Stop()
 
 	s <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
